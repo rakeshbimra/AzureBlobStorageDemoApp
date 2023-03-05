@@ -36,25 +36,33 @@ namespace AzureBlobStorageDemoApp.Helpers
         {
             logger.LogInformation("{class} - {method} - Start", nameof(BlobService), nameof(BlobService.DownloadAsync));
 
-            var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+            try
+            {
+                var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
 
-            var blobUri = new System.Uri(fileUri);
+                var blobUri = new System.Uri(fileUri);
 
-            var name = new CloudBlockBlob(blobUri).Name;
+                var name = new CloudBlockBlob(blobUri).Name;
 
-            var blobClient = containerClient.GetBlobClient(name);
+                var blobClient = containerClient.GetBlobClient(name);
 
-            var response = await blobClient.DownloadStreamingAsync();
+                var response = await blobClient.DownloadStreamingAsync();
 
-            using MemoryStream ms = new MemoryStream();
+                using MemoryStream ms = new MemoryStream();
 
-            await response.Value.Content.CopyToAsync(ms);
+                await response.Value.Content.CopyToAsync(ms);
 
-            ms.Position = 0;
+                ms.Position = 0;
 
-            logger.LogInformation("{class} - {method} - End", nameof(BlobService), nameof(BlobService.DownloadAsync));
+                logger.LogInformation("{class} - {method} - End", nameof(BlobService), nameof(BlobService.DownloadAsync));
 
-            return ms.ToArray();
+                return ms.ToArray();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError("{class} - {method} - Error: {exception}", nameof(BlobService), nameof(BlobService.DownloadAsync), ex);
+                throw;
+            }
         }
 
         /// <summary>
@@ -68,23 +76,32 @@ namespace AzureBlobStorageDemoApp.Helpers
         {
             logger.LogInformation("{class} - {method} - Start", nameof(BlobService), nameof(BlobService.UploadAsync));
 
-            var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
-
-            var blobClient = containerClient.GetBlobClient(filename);
-
-            var bytes = Encoding.UTF8.GetBytes(content);
-
-            await using var memoryStream = new MemoryStream(bytes);
-
-            await blobClient.UploadAsync(content);
-
-            logger.LogInformation("{class} - {method} - End", nameof(BlobService), nameof(BlobService.UploadAsync));
-
-            return new BlobDto
+            try
             {
-                Uri = blobClient.Uri,
-                Name = blobClient.Name
-            };
+                var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+
+                var blobClient = containerClient.GetBlobClient(filename);
+
+                var bytes = Encoding.UTF8.GetBytes(content);
+
+                await using var memoryStream = new MemoryStream(bytes);
+
+                await blobClient.UploadAsync(content);
+
+                logger.LogInformation("{class} - {method} - End", nameof(BlobService), nameof(BlobService.UploadAsync));
+
+                return new BlobDto
+                {
+                    Uri = blobClient.Uri,
+                    Name = blobClient.Name
+                };
+            }
+            catch (Exception ex)
+            {
+                logger.LogError("{class} - {method} - Error: {exception}", nameof(BlobService), nameof(BlobService.UploadAsync), ex);
+                throw;
+            }
         }
     }
+
 }
